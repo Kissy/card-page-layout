@@ -1,20 +1,19 @@
 package fr.kissy.card_page_layout.engine.event;
 
-import fr.kissy.card_page_layout.config.InputConfig;
+import fr.kissy.card_page_layout.config.DocumentProperties;
 
-import java.nio.file.Path;
 import java.util.Objects;
 
 public class ImportInputConfig {
 
-    private final InputConfig inputConfig;
+    private final DocumentProperties documentProperties;
 
-    public ImportInputConfig(InputConfig inputConfig) {
-        this.inputConfig = inputConfig;
+    public ImportInputConfig(DocumentProperties documentProperties) {
+        this.documentProperties = documentProperties;
     }
 
-    public InputConfig getInputConfig() {
-        return inputConfig;
+    public DocumentProperties getDocumentProperties() {
+        return documentProperties;
     }
 
     @Override
@@ -22,11 +21,11 @@ public class ImportInputConfig {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ImportInputConfig that = (ImportInputConfig) o;
-        return Objects.equals(inputConfig, that.inputConfig);
+        return Objects.equals(documentProperties, that.documentProperties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(inputConfig);
+        return Objects.hash(documentProperties);
     }
 }

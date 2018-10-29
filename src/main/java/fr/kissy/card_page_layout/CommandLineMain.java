@@ -5,21 +5,22 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import fr.kissy.card_page_layout.config.DimensionConverterFactory;
 import fr.kissy.card_page_layout.config.GlobalConfig;
-import fr.kissy.card_page_layout.config.InputConfig;
-import fr.kissy.card_page_layout.engine.CardPageLayoutEngine;
-import fr.kissy.card_page_layout.engine.event.ImportInputConfig;
-import fr.kissy.card_page_layout.engine.event.WorkingDocumentImported;
-import fr.kissy.card_page_layout.engine.model.WorkingImage;
+import fr.kissy.card_page_layout.config.DocumentProperties;
+import fr.kissy.card_page_layout.engine.use_case.CreateOutputImages;
+import fr.kissy.card_page_layout.engine.use_case.ImportDocument;
+import fr.kissy.card_page_layout.engine.model.WorkingDocument;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CommandLineMain {
 
@@ -44,57 +45,45 @@ public class CommandLineMain {
     }
 
     private void run() {
-        EventBus eventBus = new EventBus();
-        eventBus.register(this);
-
-        new CardPageLayoutEngine(globalConfig.workDirectory.toPath(), eventBus);
-
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
-            InputConfig config = mapper.readValue(globalConfig.inputConfigFile, InputConfig.class);
-            eventBus.post(new ImportInputConfig(config));
+            List<WorkingDocument> frontCardsDocuments = new ArrayList<>();
+            List<WorkingDocument> backCardsDocuments = new ArrayList<>();
+            for (File inputConfigFile : globalConfig.inputConfigFiles) {
+                DocumentProperties inputDocumentProperties = mapper.readValue(inputConfigFile, DocumentProperties.class);
+                WorkingDocument workingDocument = new ImportDocument(globalConfig.workDirectory.toPath()).execute(inputDocumentProperties);
+                if (inputDocumentProperties.isBack()) {
+                    backCardsDocuments.add(workingDocument);
+                } else {
+                    frontCardsDocuments.add(workingDocument);
+                }
+            }
+
+            DocumentProperties outputDocumentProperties = mapper.readValue(globalConfig.outputConfigFile, DocumentProperties.class);
+
+            List<BufferedImage> backCardsOutput = backCardsDocuments.stream()
+                    .flatMap(wd -> new CreateOutputImages(outputDocumentProperties).execute(wd).stream())
+                    .collect(Collectors.toList());
+
+            List<BufferedImage> pages = new ArrayList<>();
+            int cardPageIndex = 0;
+            for (WorkingDocument workingDocument : frontCardsDocuments) {
+                List<BufferedImage> frontCardsOutput = new CreateOutputImages(outputDocumentProperties).execute(workingDocument);
+                for (BufferedImage bufferedImage : frontCardsOutput) {
+                    pages.add(bufferedImage);
+                    pages.add(backCardsOutput.get(cardPageIndex % backCardsOutput.size()));
+                    cardPageIndex++;
+                }
+            }
+
+            int i = 0;
+            for (BufferedImage page : pages) {
+                Path resolve = Paths.get("work").resolve("out." + i + ".png");
+                ImageIO.write(page, "png", resolve.toFile());
+                i++;
+            }
         } catch (IOException e) {
             throw new RuntimeException("Cannot read input file", e);
         }
-    }
-
-    @Subscribe
-    public void on(WorkingDocumentImported event) {
-        WorkingImage workingImage = event.getWorkingDocument().getImages().get(0);
-        List<BufferedImage> croppedCards = workingImage.getCroppedCards(globalConfig);
-
-        int i = 0;
-        for (BufferedImage croppedCard : croppedCards) {
-            try {
-                Path resolve = workingImage.getPath().getParent().resolve(workingImage.getPath().getFileName() + "." + i + ".png");
-                ImageIO.write(croppedCard, "png", resolve.toFile());
-            } catch (IOException e) {
-                throw new RuntimeException("Impossible to write image", e);
-            }
-            i++;
-        }
-
-
-        /*BufferedImage bufferedImage = workingImage.getBufferedImage();
-        BufferedImage rendered = new BufferedImage(bufferedImage.getWidth(), bufferedImage.getHeight(), bufferedImage.getType());
-        Graphics2D graphics = rendered.createGraphics();
-        graphics.drawImage(bufferedImage, 0, 0, null);
-        graphics.setColor(Color.RED);
-        graphics.setStroke(new BasicStroke(4));
-
-        Dimension gridSize = globalConfig.inputsConfig.gridSize;
-        Dimension cardSize = globalConfig.inputsConfig.cardSize;
-
-        int startingY = (bufferedImage.getHeight() - (cardSize.height * gridSize.height)) / 2;
-        for (int rows = 0; rows < gridSize.height; rows++) {
-            int startingX = (bufferedImage.getWidth() - (cardSize.width * gridSize.width)) / 2;
-            for (int cols = 0; cols < gridSize.width; cols++) {
-                graphics.drawRect(startingX, startingY, cardSize.width, cardSize.height);
-                startingX += cardSize.width;
-            }
-            startingY += cardSize.height;
-        }
-
-        graphics.dispose();*/
     }
 }

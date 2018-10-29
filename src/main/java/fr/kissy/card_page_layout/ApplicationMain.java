@@ -45,7 +45,7 @@ public class ApplicationMain extends JFrame {
         /*UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
         final EventBus eventBus = new AsyncEventBus(Executors.newFixedThreadPool(4));
-        new CardPageLayoutEngine(eventBus);
+        new ImportDocument(eventBus);
 
         EventQueue.invokeLater(() -> new ApplicationMain(eventBus));*/
     }

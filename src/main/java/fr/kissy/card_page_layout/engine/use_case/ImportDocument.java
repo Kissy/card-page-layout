@@ -1,9 +1,6 @@
-package fr.kissy.card_page_layout.engine;
+package fr.kissy.card_page_layout.engine.use_case;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import fr.kissy.card_page_layout.engine.event.ImportInputConfig;
-import fr.kissy.card_page_layout.engine.event.WorkingDocumentImported;
+import fr.kissy.card_page_layout.config.DocumentProperties;
 import fr.kissy.card_page_layout.engine.model.WorkingDocument;
 import fr.kissy.card_page_layout.engine.model.WorkingImage;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -21,22 +18,18 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CardPageLayoutEngine {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CardPageLayoutEngine.class);
+public class ImportDocument {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImportDocument.class);
     private final Path workDirectory;
-    private final EventBus eventBus;
 
-    public CardPageLayoutEngine(Path workDirectory, EventBus eventBus) {
-        this.eventBus = eventBus;
+    public ImportDocument(Path workDirectory) {
         this.workDirectory = workDirectory;
-        eventBus.register(this);
     }
 
-    @Subscribe
-    public void on(ImportInputConfig event) {
+    public WorkingDocument execute(DocumentProperties documentProperties) {
         try {
-            LOGGER.info("Loading pdf file {}", event.getInputConfig());
-            File inputFile = new File(event.getInputConfig().getPath());
+            File inputFile = new File(documentProperties.getPath());
+            LOGGER.info("Importing pdf file {} ({})", inputFile, documentProperties.getPages());
             PDDocument document = PDDocument.load(inputFile);
             PDFRenderer pdfRenderer = new PDFRenderer(document);
             String documentName = com.google.common.io.Files.getNameWithoutExtension(inputFile.getName());
@@ -46,22 +39,26 @@ public class CardPageLayoutEngine {
             }
 
             List<WorkingImage> images = new ArrayList<>();
-            for (int pageIndex = 0; pageIndex < document.getNumberOfPages(); pageIndex++) {
+            documentProperties.getPagesRange(document.getNumberOfPages()).forEach(pageIndex -> {
                 Path workingImagePath = documentWorkDirectory.resolve(pageIndex + ".png");
                 BufferedImage bufferedImage = null;
                 if (!Files.exists(workingImagePath)) {
-                    bufferedImage = pdfRenderer.renderImageWithDPI(pageIndex, 300, ImageType.RGB);
-                    ImageIO.write(bufferedImage, "png", workingImagePath.toFile());
+                    try {
+                        bufferedImage = pdfRenderer.renderImageWithDPI(pageIndex - 1, 300, ImageType.RGB);
+                        ImageIO.write(bufferedImage, "png", workingImagePath.toFile());
+                    } catch (Exception e) {
+                        throw new RuntimeException("Error while converting image from pdf", e);
+                    }
                 }
                 images.add(new WorkingImage(workingImagePath, bufferedImage));
-            }
+            });
             document.close();
 
-            WorkingDocument workingDocument = new WorkingDocument(event.getInputConfig(), images);
-            LOGGER.info("Found {} images from file {}", images.size(), event.getInputConfig());
-            eventBus.post(new WorkingDocumentImported(workingDocument));
+            WorkingDocument workingDocument = new WorkingDocument(documentProperties, images);
+            LOGGER.info("Imported {} images from {} pages", images.size(), document.getNumberOfPages());
+            return workingDocument;
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Exception while trying to import document", e);
         }
     }
 }
