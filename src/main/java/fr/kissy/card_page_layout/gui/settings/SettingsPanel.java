@@ -32,7 +32,7 @@ public class SettingsPanel extends JPanel {
         add(cardsSection);
 
         JPanel gridSection = new JPanel(new GridLayout(2, 2, 0, 5));
-        gridSection.setBorder(BorderFactory.createTitledBorder("Grid"));
+        gridSection.setBorder(BorderFactory.createTitledBorder("GridSize"));
         gridSection.add(new JLabel("Rows"));
         gridSection.add(new JTextField(10));
         gridSection.add(new JLabel("Columns"));

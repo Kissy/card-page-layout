@@ -35,10 +35,11 @@ public class WorkingImage {
     }
 
     public List<BufferedImage> getCroppedCards(GlobalConfig globalConfig) {
-        Dimension gridSize = globalConfig.inputConfig.gridSize;
-        Dimension cardSize = globalConfig.inputConfig.cardSize;
-
         List<BufferedImage> croppedImages = new ArrayList<>();
+
+        /*Dimension gridSize = globalConfig.inputsConfig.gridSize;
+        Dimension cardSize = globalConfig.inputsConfig.cardSize;
+
         int startingY = (getBufferedImage().getHeight() - (cardSize.height * gridSize.height)) / 2;
         for (int rows = 0; rows < gridSize.height; rows++) {
             int startingX = (getBufferedImage().getWidth() - (cardSize.width * gridSize.width)) / 2;
@@ -48,7 +49,7 @@ public class WorkingImage {
                 startingX += cardSize.width;
             }
             startingY += cardSize.height;
-        }
+        }*/
         return croppedImages;
     }
 }

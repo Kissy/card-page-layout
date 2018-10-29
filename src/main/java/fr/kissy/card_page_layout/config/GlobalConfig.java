@@ -8,10 +8,10 @@ import java.io.File;
 public class GlobalConfig {
     @Parameter(names = {"--resolution", "-r" }, description = "Resolutions in DPI")
     public int resolution = 300;
-    @Parameter(names = {"--work-dir", "-wd" }, description = "Work directory for temporary files")
+    @Parameter(names = {"--work-dir", "-w" }, description = "Work directory for temporary files")
     public File workDirectory = new File("work");
-    @ParametersDelegate
-    public InputConfig inputConfig = new InputConfig();
+    @Parameter(names = {"--inputs", "-i" }, description = "Input configuration yaml file, default to input.yaml")
+    public File inputConfigFile = new File("input.yaml"); // TODO make list ?
     @ParametersDelegate
     public OutputConfig outputConfig = new OutputConfig();
 
@@ -20,7 +20,7 @@ public class GlobalConfig {
         return "GlobalConfig{" +
                 "resolution=" + resolution +
                 ", workDirectory=" + workDirectory +
-                ", inputConfig=" + inputConfig +
+                ", inputConfigFile=" + inputConfigFile +
                 ", outputConfig=" + outputConfig +
                 '}';
     }

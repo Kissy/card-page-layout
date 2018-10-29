@@ -1,7 +1,7 @@
 package fr.kissy.card_page_layout.gui;
 
 import com.google.common.eventbus.EventBus;
-import fr.kissy.card_page_layout.engine.event.PdfFileOpened;
+import fr.kissy.card_page_layout.engine.event.ImportInputConfig;
 
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
@@ -18,7 +18,7 @@ public class MainMenuBar extends JMenuBar {
         menuItem.setActionCommand("file-open");
         menuItem.setAction(new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                eventBus.post(new PdfFileOpened(Paths.get("input.pdf")));
+                //eventBus.post(new ImportInputConfig(Paths.get("input.pdf")));
             }
         });
         fileMenu.add(menuItem);

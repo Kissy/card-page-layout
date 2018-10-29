@@ -3,27 +3,22 @@ package fr.kissy.card_page_layout;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParametersDelegate;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import fr.kissy.card_page_layout.config.DimensionConverter;
 import fr.kissy.card_page_layout.config.DimensionConverterFactory;
 import fr.kissy.card_page_layout.config.GlobalConfig;
+import fr.kissy.card_page_layout.config.InputConfig;
 import fr.kissy.card_page_layout.engine.CardPageLayoutEngine;
-import fr.kissy.card_page_layout.engine.event.PdfFileOpened;
+import fr.kissy.card_page_layout.engine.event.ImportInputConfig;
 import fr.kissy.card_page_layout.engine.event.WorkingDocumentImported;
 import fr.kissy.card_page_layout.engine.model.WorkingImage;
 
 import javax.imageio.ImageIO;
-import javax.swing.UnsupportedLookAndFeelException;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 public class CommandLineMain {
@@ -36,20 +31,31 @@ public class CommandLineMain {
     public static void main(String[] args) {
         System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
         CommandLineMain commandLineMain = new CommandLineMain();
-        JCommander.newBuilder()
+        JCommander jCommander = JCommander.newBuilder()
                 .addConverterFactory(new DimensionConverterFactory())
                 .addObject(commandLineMain)
-                .build()
-                .parse(args);
-        commandLineMain.run();
+                .build();
+        jCommander.parse(args);
+        if (commandLineMain.help) {
+            jCommander.usage();
+        } else {
+            commandLineMain.run();
+        }
     }
 
     private void run() {
         EventBus eventBus = new EventBus();
         eventBus.register(this);
 
-        new CardPageLayoutEngine(globalConfig, eventBus);
-        eventBus.post(new PdfFileOpened(Paths.get("input.pdf")));
+        new CardPageLayoutEngine(globalConfig.workDirectory.toPath(), eventBus);
+
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        try {
+            InputConfig config = mapper.readValue(globalConfig.inputConfigFile, InputConfig.class);
+            eventBus.post(new ImportInputConfig(config));
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot read input file", e);
+        }
     }
 
     @Subscribe
@@ -76,8 +82,8 @@ public class CommandLineMain {
         graphics.setColor(Color.RED);
         graphics.setStroke(new BasicStroke(4));
 
-        Dimension gridSize = globalConfig.inputConfig.gridSize;
-        Dimension cardSize = globalConfig.inputConfig.cardSize;
+        Dimension gridSize = globalConfig.inputsConfig.gridSize;
+        Dimension cardSize = globalConfig.inputsConfig.cardSize;
 
         int startingY = (bufferedImage.getHeight() - (cardSize.height * gridSize.height)) / 2;
         for (int rows = 0; rows < gridSize.height; rows++) {

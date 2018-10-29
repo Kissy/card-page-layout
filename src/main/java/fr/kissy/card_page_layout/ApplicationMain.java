@@ -2,7 +2,7 @@ package fr.kissy.card_page_layout;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.eventbus.EventBus;
-import fr.kissy.card_page_layout.engine.event.PdfFileOpened;
+import fr.kissy.card_page_layout.engine.event.ImportInputConfig;
 import fr.kissy.card_page_layout.gui.settings.SettingsPanel;
 import fr.kissy.card_page_layout.gui.MainMenuBar;
 import fr.kissy.card_page_layout.gui.preview.PreviewPanel;
@@ -37,7 +37,7 @@ public class ApplicationMain extends JFrame {
         getContentPane().add(new SettingsPanel(), BorderLayout.EAST);
 
         // TODO move that to on open file
-        eventBus.post(new PdfFileOpened(Paths.get("input.pdf")));
+        //eventBus.post(new ImportInputConfig(Paths.get("input.pdf")));
     }
 
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException {
