@@ -1,0 +1,11 @@
+name: standard-input
+path: path-to-pdf.pdf
+page:
+  width: 2480
+  height: 3508
+grid:
+  cols: 3
+  rows: 3
+card:
+  width: 750
+  height: 1050
