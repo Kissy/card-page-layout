@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>title</title>
+    <style>
+        .page {
+            position: relative;
+        }
+
+        .overlay {
+            position: absolute;
+            outline: 1px solid red;
+            height: 200px;
+            width: 200px;
+        }
+
+        .card {
+            position: absolute;
+            opacity: 0.3;
+            top: 200px;
+            right: 20px;
+        }
+
+        .controls {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+    </style>
+</head>
+<body>
+<!-- page content -->
+<div class="page">
+    <img id="page" src="work/GloomhavenPrintNPlayKS/21.png" width="800"/>
+    <div id="overlays"></div>
+</div>
+<div class="controls">
+    <label>
+        Card Width: <input type="number" id="card-width"/>
+    </label>
+    <br />
+    <label>
+        Card Height: <input type="number" id="card-height"/>
+    </label>
+    <br />
+    <label>
+        Margin Width: <input type="number" id="card-margin-width"/>
+    </label>
+    <br />
+    <label>
+        Margin Height: <input type="number" id="card-margin-height"/>
+    </label>
+    <br />
+    <label>
+        Offset Width: <input type="number" id="card-offset-width"/>
+    </label>
+    <br />
+    <label>
+        Offset Height: <input type="number" id="card-offset-height"/>
+    </label>
+    <br />
+    <label>
+        Grid Cols: <input type="number" id="grid-cols"/>
+    </label>
+    <br />
+    <label>
+        Grid Rows: <input type="number" id="grid-rows"/>
+    </label>
+</div>
+<div id="cards"></div>
+
+<script type="text/javascript">
+window.onload = function() {
+    var page = document.getElementById("page");
+    var config = {
+        card: {
+            width: 750,
+            height: 1050
+        },
+        margin: {
+            width: 0,
+            height: 0
+        },
+        offset: {
+            width: 0,
+            height: 0
+        },
+        grid: {
+            cols: 3,
+            rows: 3
+        }
+    };
+
+    document.getElementById("card-width").value = config.card.width;
+    document.getElementById("card-height").value = config.card.height;
+    document.getElementById("card-margin-width").value = config.margin.width;
+    document.getElementById("card-margin-height").value = config.margin.height;
+    document.getElementById("card-offset-width").value = config.offset.width;
+    document.getElementById("card-offset-height").value = config.offset.height;
+    document.getElementById("grid-cols").value = config.grid.cols;
+    document.getElementById("grid-rows").value = config.grid.rows;
+
+    function renderGrid() {
+        var overlays = document.getElementById("overlays");
+        var cards = document.getElementById("cards");
+        /*while (cards.firstChild) {
+            cards.removeChild(cards.firstChild);
+        }*/
+
+        var ratio = page.width / page.naturalWidth;
+
+        var cardWidth = document.getElementById("card-width").value * ratio;
+        var cardHeight = document.getElementById("card-height").value * ratio;
+        var cardMarginWidth = document.getElementById("card-margin-width").value * ratio;
+        var cardMarginHeight = document.getElementById("card-margin-height").value * ratio;
+        var cardOffsetWidth = document.getElementById("card-offset-width").value * ratio;
+        var cardOffsetHeight = document.getElementById("card-offset-height").value * ratio;
+        var gridCols = document.getElementById("grid-cols").value;
+        var gridRows = document.getElementById("grid-rows").value;
+
+        var y = (page.height - (cardHeight * gridRows)) / 2 + cardOffsetHeight;
+        for (var rows = 0; rows < gridRows; rows++) {
+            var x = (page.width - (cardWidth * gridCols)) / 2 + cardOffsetWidth;
+            for (var cols = 0; cols < gridCols; cols++) {
+                var overlay = overlays.childNodes[cols + rows * gridCols];
+                if (overlay == null) {
+                    overlay = document.createElement("div");
+                    overlays.appendChild(overlay);
+                }
+                overlay.className = "overlay";
+                overlay.style.width = cardWidth + "px";
+                overlay.style.height = cardHeight + "px";
+                overlay.style.top = y + "px";
+                overlay.style.left = x + "px";
+
+                var card = cards.childNodes[cols + rows * gridCols];
+                if (card == null) {
+                    card = document.createElement("div");
+                    cards.appendChild(card);
+                }
+                card.className = "card";
+                card.style.width = cardWidth + "px";
+                card.style.height = cardHeight + "px";
+                card.style.backgroundImage = "url(" + page.src + ")";
+                card.style.backgroundPositionX = -x + "px";
+                card.style.backgroundPositionY = -y + "px";
+                card.style.backgroundSize = page.width + "px";
+
+                x += cardWidth + cardMarginWidth;
+            }
+            y += cardHeight + cardMarginHeight;
+        }
+    }
+
+    document.querySelector('.controls').addEventListener('change', renderGrid);
+    renderGrid();
+};
+</script>
+
+</body>
+</html>

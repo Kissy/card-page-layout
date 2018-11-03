@@ -1,5 +1,5 @@
 name: standard-input
-path: output.pdf
+path: path-to-pdf.pdf
 page:
   width: 2480
   height: 3508
@@ -9,3 +9,9 @@ grid:
 card:
   width: 750
   height: 1050
+margin:
+  width: 0
+  height: 0
+offset:
+  width: 0
+  height: 0

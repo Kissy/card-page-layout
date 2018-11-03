@@ -6,11 +6,17 @@ import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import fr.kissy.card_page_layout.config.DimensionConverterFactory;
-import fr.kissy.card_page_layout.config.GlobalConfig;
 import fr.kissy.card_page_layout.config.DocumentProperties;
-import fr.kissy.card_page_layout.engine.use_case.CreateOutputImages;
-import fr.kissy.card_page_layout.engine.use_case.ImportDocument;
+import fr.kissy.card_page_layout.config.GlobalConfig;
+import fr.kissy.card_page_layout.config.GridSize;
+import fr.kissy.card_page_layout.engine.model.CardToPages;
+import fr.kissy.card_page_layout.engine.model.Page;
 import fr.kissy.card_page_layout.engine.model.WorkingDocument;
+import fr.kissy.card_page_layout.engine.use_case.CreateOutputImage;
+import fr.kissy.card_page_layout.engine.use_case.ImportDocument;
+import fr.kissy.card_page_layout.engine.use_case.WriteDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -20,9 +26,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class CommandLineMain {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommandLineMain.class);
 
     @Parameter(names = "--help", help = true)
     private boolean help;
@@ -61,27 +68,29 @@ public class CommandLineMain {
 
             DocumentProperties outputDocumentProperties = mapper.readValue(globalConfig.outputConfigFile, DocumentProperties.class);
 
-            List<BufferedImage> backCardsOutput = backCardsDocuments.stream()
-                    .flatMap(wd -> new CreateOutputImages(outputDocumentProperties).execute(wd).stream())
-                    .collect(Collectors.toList());
+            GridSize outputGridSize = outputDocumentProperties.getGrid();
+            List<Page> backCardsOutput = backCardsDocuments.stream()
+                    .flatMap(WorkingDocument::getCards)
+                    .collect(new CardToPages(outputGridSize.getCols() * outputGridSize.getRows()));
 
-            List<BufferedImage> pages = new ArrayList<>();
+            List<Page> frontCardsOutput = frontCardsDocuments.stream()
+                    .flatMap(WorkingDocument::getCards)
+                    .collect(new CardToPages(outputGridSize.getCols() * outputGridSize.getRows()));
+
+            LOGGER.info("Processing {} fronts and {} backs inputs", frontCardsOutput.size(), backCardsOutput.size());
+
+            List<Page> pages = new ArrayList<>();
             int cardPageIndex = 0;
-            for (WorkingDocument workingDocument : frontCardsDocuments) {
-                List<BufferedImage> frontCardsOutput = new CreateOutputImages(outputDocumentProperties).execute(workingDocument);
-                for (BufferedImage bufferedImage : frontCardsOutput) {
-                    pages.add(bufferedImage);
+            for (Page page : frontCardsOutput) {
+                pages.add(page);
+                if (!backCardsOutput.isEmpty()) {
                     pages.add(backCardsOutput.get(cardPageIndex % backCardsOutput.size()));
                     cardPageIndex++;
                 }
             }
 
-            int i = 0;
-            for (BufferedImage page : pages) {
-                Path resolve = Paths.get("work").resolve("out." + i + ".png");
-                ImageIO.write(page, "png", resolve.toFile());
-                i++;
-            }
+            LOGGER.info("Writing {} pages to pdf", pages.size());
+            new WriteDocument(outputDocumentProperties).execute(pages);
         } catch (IOException e) {
             throw new RuntimeException("Cannot read input file", e);
         }

@@ -9,42 +9,35 @@ import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class WorkingDocument {
     private final DocumentProperties documentProperties;
     private final List<WorkingImage> images;
+
     public WorkingDocument(DocumentProperties documentProperties, List<WorkingImage> images) {
         this.documentProperties = documentProperties;
         this.images = images;
     }
 
-    public DocumentProperties getDocumentProperties() {
-        return documentProperties;
-    }
-
-    public List<WorkingImage> getImages() {
-        return images;
-    }
-
-    public List<BufferedImage> getCards() {
-        List<BufferedImage> cards = new ArrayList<>();
-
+    public Stream<Card> getCards() {
         GridSize gridSize = documentProperties.getGrid();
         CardSize cardSize = documentProperties.getCard();
 
+        Stream.Builder<Card> cards = Stream.builder();
+
         for (WorkingImage image : images) {
-            int startingY = (image.getBufferedImage().getHeight() - (cardSize.getHeight() * gridSize.getRows())) / 2;
+            int y = (image.getBufferedImage().getHeight() - (cardSize.getHeight() * gridSize.getRows())) / 2;
             for (int rows = 0; rows < gridSize.getRows(); rows++) {
-                int startingX = (image.getBufferedImage().getWidth() - (cardSize.getWidth() * gridSize.getCols())) / 2;
+                int x = (image.getBufferedImage().getWidth() - (cardSize.getWidth() * gridSize.getCols())) / 2;
                 for (int cols = 0; cols < gridSize.getCols(); cols++) {
-                    BufferedImage cropped = image.getBufferedImage().getSubimage(startingX, startingY, cardSize.getWidth(), cardSize.getHeight());
-                    cards.add(cropped);
-                    startingX += cardSize.getWidth();
+                    cards.add(new Card(image, cardSize, x, y));
+                    x += cardSize.getWidth();
                 }
-                startingY += cardSize.getHeight();
+                y += cardSize.getHeight();
             }
         }
 
-        return cards;
+        return cards.build();
     }
 }
