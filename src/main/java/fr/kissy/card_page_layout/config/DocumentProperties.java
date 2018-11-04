@@ -8,9 +8,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class DocumentProperties {
-    private final String name;
     private final String path;
-    private final boolean back;
+    private final DocumentProperties back;
     private final String pages;
     private final PageSize page;
     private final GridSize grid;
@@ -20,9 +19,8 @@ public class DocumentProperties {
 
     @JsonCreator
     public DocumentProperties(
-            @JsonProperty("name") String name,
             @JsonProperty("path") String path,
-            @JsonProperty("back") Boolean back,
+            @JsonProperty("back") DocumentProperties back,
             @JsonProperty("pages") String pages,
             @JsonProperty("page") PageSize page,
             @JsonProperty("grid") GridSize grid,
@@ -30,9 +28,8 @@ public class DocumentProperties {
             @JsonProperty("margin") Margin margin,
             @JsonProperty("offset") Offset offset
     ) {
-        this.name = name;
         this.path = path;
-        this.back = back == null ? false : back;
+        this.back = back;
         this.pages = pages;
         this.page = page;
         this.grid = grid == null ? new GridSize(3, 3) : grid;
@@ -41,15 +38,11 @@ public class DocumentProperties {
         this.offset = offset == null ? new Offset(0, 0) : offset;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public String getPath() {
         return path;
     }
 
-    public boolean isBack() {
+    public DocumentProperties getBack() {
         return back;
     }
 
@@ -94,9 +87,5 @@ public class DocumentProperties {
                     }
                 })
                 .filter(i -> i > 0 && i <= numberOfPages);
-    }
-
-    public DocumentProperties asBack(boolean back) {
-        return new DocumentProperties(name, path, back, pages, page, grid, card, margin, offset);
     }
 }

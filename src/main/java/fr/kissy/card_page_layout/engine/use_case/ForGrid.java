@@ -12,10 +12,12 @@ import java.util.function.BiConsumer;
 public class ForGrid {
     private DocumentProperties documentProperties;
     private BufferedImage bufferedImage;
+    private boolean reversed;
 
-    public ForGrid(DocumentProperties documentProperties, BufferedImage bufferedImage) {
+    public ForGrid(DocumentProperties documentProperties, BufferedImage bufferedImage, boolean reversed) {
         this.documentProperties = documentProperties;
         this.bufferedImage = bufferedImage;
+        this.reversed = reversed;
     }
 
     public void execute(BiConsumer<Integer, Offset> callback) {
@@ -24,8 +26,8 @@ public class ForGrid {
         Offset offset = documentProperties.getOffset();
         Margin margin = documentProperties.getMargin();
 
-        int colsDirection = documentProperties.isBack() ? 1 : -1;
-        int colsOrder = documentProperties.isBack() ? gridSize.getCols() - 1 : 0;
+        int colsDirection = reversed ? 1 : -1;
+        int colsOrder = reversed ? gridSize.getCols() - 1 : 0;
 
         int cardIndex = 0;
         int startingY = (bufferedImage.getHeight() - (cardSize.getHeight() * gridSize.getRows())) / 2 + offset.getHeight();

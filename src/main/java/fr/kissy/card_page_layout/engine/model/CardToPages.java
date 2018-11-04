@@ -1,9 +1,7 @@
 package fr.kissy.card_page_layout.engine.model;
 
 import com.google.common.collect.Sets;
-import com.sun.jmx.remote.internal.ArrayQueue;
 import fr.kissy.card_page_layout.config.DocumentProperties;
-import fr.kissy.card_page_layout.config.GridSize;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -12,8 +10,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class CardToPages implements Collector<Card, Deque<List<Card>>, List<Page>> {
+public class CardToPages implements Collector<FrontAndBackCard, Deque<List<FrontAndBackCard>>, List<Page>> {
 
     private final int numberPerPages;
     private DocumentProperties outputDocumentProperties;
@@ -24,31 +23,34 @@ public class CardToPages implements Collector<Card, Deque<List<Card>>, List<Page
     }
 
     @Override
-    public Supplier<Deque<List<Card>>> supplier() {
+    public Supplier<Deque<List<FrontAndBackCard>>> supplier() {
         return ArrayDeque::new;
     }
 
     @Override
-    public BiConsumer<Deque<List<Card>>, Card> accumulator() {
-        return ((cards, card) -> {
+    public BiConsumer<Deque<List<FrontAndBackCard>>, FrontAndBackCard> accumulator() {
+        return ((cards, frontAndBackCard) -> {
             if (cards.isEmpty() || cards.peekLast().size() == numberPerPages) {
                 cards.add(new ArrayList<>());
             }
-            cards.peekLast().add(card);
+            cards.peekLast().add(frontAndBackCard);
         });
     }
 
     @Override
-    public BinaryOperator<Deque<List<Card>>> combiner() {
+    public BinaryOperator<Deque<List<FrontAndBackCard>>> combiner() {
         return (firstCards, secondCards) -> {
             throw new UnsupportedOperationException("Cannot combine pages");
         };
     }
 
     @Override
-    public Function<Deque<List<Card>>, List<Page>> finisher() {
+    public Function<Deque<List<FrontAndBackCard>>, List<Page>> finisher() {
         return (cards) -> cards.stream()
-                .map(pageCards -> new Page(outputDocumentProperties, pageCards))
+                .flatMap(pageCards -> Stream.of(
+                        new Page(outputDocumentProperties, pageCards.stream().map(FrontAndBackCard::getFrontCard).collect(Collectors.toList()), false),
+                        new Page(outputDocumentProperties, pageCards.stream().map(FrontAndBackCard::getBackCard).collect(Collectors.toList()), true)
+                ))
                 .collect(Collectors.toList());
     }
 
@@ -56,4 +58,5 @@ public class CardToPages implements Collector<Card, Deque<List<Card>>, List<Page
     public Set<Characteristics> characteristics() {
         return Sets.newHashSet();
     }
+
 }

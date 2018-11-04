@@ -8,8 +8,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import fr.kissy.card_page_layout.config.DimensionConverterFactory;
 import fr.kissy.card_page_layout.config.DocumentProperties;
 import fr.kissy.card_page_layout.config.GlobalConfig;
-import fr.kissy.card_page_layout.config.GridSize;
-import fr.kissy.card_page_layout.engine.model.Card;
 import fr.kissy.card_page_layout.engine.model.CardToPages;
 import fr.kissy.card_page_layout.engine.model.Page;
 import fr.kissy.card_page_layout.engine.model.WorkingDocument;
@@ -22,9 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CommandLineMain {
 
@@ -53,50 +48,19 @@ public class CommandLineMain {
     private void run() {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
-            List<WorkingDocument> frontCardsDocuments = new ArrayList<>();
-            List<WorkingDocument> backCardsDocuments = new ArrayList<>();
+            List<WorkingDocument> documents = new ArrayList<>();
             for (File inputConfigFile : globalConfig.inputConfigFiles) {
                 DocumentProperties inputDocumentProperties = mapper.readValue(inputConfigFile, DocumentProperties.class);
                 WorkingDocument workingDocument = new ImportDocument(globalConfig.workDirectory.toPath()).execute(inputDocumentProperties);
-                if (inputDocumentProperties.isBack()) {
-                    backCardsDocuments.add(workingDocument);
-                } else {
-                    frontCardsDocuments.add(workingDocument);
-                }
+                documents.add(workingDocument);
             }
 
             DocumentProperties outputDocumentProperties = mapper.readValue(globalConfig.outputConfigFile, DocumentProperties.class);
 
-            List<Card> allFrontCards = frontCardsDocuments.stream()
+            LOGGER.info("Processing {} documents", documents.size());
+            List<Page> pages = documents.stream()
                     .flatMap(WorkingDocument::getCards)
-                    .collect(Collectors.toList());
-
-            List<Card> allBackCards = new ArrayList<>();
-            List<Card> backCards = backCardsDocuments.stream()
-                    .flatMap(WorkingDocument::getCards)
-                    .collect(Collectors.toList());
-            if (!backCards.isEmpty()) {
-                while (allBackCards.size() < allFrontCards.size()) {
-                    allBackCards.addAll(backCards);
-                }
-            }
-
-            List<Page> frontCardsOutput = allFrontCards.stream()
-                    .collect(new CardToPages(outputDocumentProperties.asBack(false)));
-            List<Page> backCardsOutput = allBackCards.stream()
-                    .collect(new CardToPages(outputDocumentProperties.asBack(true)));
-
-            LOGGER.info("Processing {} fronts and {} backs inputs", frontCardsOutput.size(), backCardsOutput.size());
-
-            List<Page> pages = new ArrayList<>();
-            int cardPageIndex = 0;
-            for (Page page : frontCardsOutput) {
-                pages.add(page);
-                if (!backCardsOutput.isEmpty()) {
-                    pages.add(backCardsOutput.get(cardPageIndex % backCardsOutput.size()));
-                    cardPageIndex++;
-                }
-            }
+                    .collect(new CardToPages(outputDocumentProperties));
 
             LOGGER.info("Writing {} pages to pdf", pages.size());
             new WriteDocument(outputDocumentProperties).execute(pages);

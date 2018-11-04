@@ -14,10 +14,12 @@ import java.util.List;
 public class Page {
     private DocumentProperties documentProperties;
     private final List<Card> cards;
+    private boolean reversed;
 
-    public Page(DocumentProperties documentProperties, List<Card> cards) {
+    public Page(DocumentProperties documentProperties, List<Card> cards, boolean reversed) {
         this.documentProperties = documentProperties;
         this.cards = cards;
+        this.reversed = reversed;
     }
 
     public BufferedImage getImage() {
@@ -37,7 +39,7 @@ public class Page {
 
     private void drawCards(BufferedImage bufferedImage, Graphics2D graphics) {
         CardSize cardSize = documentProperties.getCard();
-        new ForGrid(documentProperties, bufferedImage).execute((cardIndex, offset) -> {
+        new ForGrid(documentProperties, bufferedImage, reversed).execute((cardIndex, offset) -> {
             if (cards.size() > cardIndex) {
                 Card card = cards.get(cardIndex);
                 graphics.drawImage(card.getImage(), offset.getWidth(), offset.getHeight(), cardSize.getWidth(), cardSize.getHeight(), null);
