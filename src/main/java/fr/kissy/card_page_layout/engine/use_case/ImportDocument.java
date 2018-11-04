@@ -55,7 +55,7 @@ public class ImportDocument {
             document.close();
 
             WorkingDocument workingDocument = new WorkingDocument(documentProperties, images);
-            LOGGER.info("Imported {} images from {} pages", images.size(), document.getNumberOfPages());
+            LOGGER.info("Imported {} images from {} pages as {}", images.size(), document.getNumberOfPages(), documentProperties.isBack() ? "back" : "front");
             return workingDocument;
         } catch (IOException e) {
             throw new RuntimeException("Exception while trying to import document", e);

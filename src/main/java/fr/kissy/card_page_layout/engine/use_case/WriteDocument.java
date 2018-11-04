@@ -29,8 +29,7 @@ public class WriteDocument {
                 PDPage pdPage = new PDPage(new PDRectangle(pageSize.getWidth(), pageSize.getHeight()));
                 document.addPage(pdPage);
 
-                BufferedImage pageImage = new CreateOutputImage(documentProperties).execute(page);
-                PDImageXObject pdImage = JPEGFactory.createFromImage(document, pageImage);
+                PDImageXObject pdImage = JPEGFactory.createFromImage(document, page.getImage());
                 try (PDPageContentStream contentStream = new PDPageContentStream(document, pdPage)) {
                     contentStream.drawImage(pdImage, 0, 0);
                 }

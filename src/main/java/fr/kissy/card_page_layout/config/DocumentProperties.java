@@ -10,11 +10,13 @@ import java.util.stream.Stream;
 public class DocumentProperties {
     private final String name;
     private final String path;
-    private final Boolean back;
+    private final boolean back;
     private final String pages;
     private final PageSize page;
     private final GridSize grid;
     private final CardSize card;
+    private final Margin margin;
+    private final Offset offset;
 
     @JsonCreator
     public DocumentProperties(
@@ -24,15 +26,19 @@ public class DocumentProperties {
             @JsonProperty("pages") String pages,
             @JsonProperty("page") PageSize page,
             @JsonProperty("grid") GridSize grid,
-            @JsonProperty("card") CardSize card
+            @JsonProperty("card") CardSize card,
+            @JsonProperty("margin") Margin margin,
+            @JsonProperty("offset") Offset offset
     ) {
         this.name = name;
         this.path = path;
         this.back = back == null ? false : back;
         this.pages = pages;
         this.page = page;
-        this.grid = grid;
-        this.card = card;
+        this.grid = grid == null ? new GridSize(3, false,3, false) : grid;
+        this.card = card == null ? new CardSize(750, 1050) : card;
+        this.margin = margin == null ? new Margin(0, 0) : margin;
+        this.offset = offset == null ? new Offset(0, 0) : offset;
     }
 
     public String getName() {
@@ -43,7 +49,7 @@ public class DocumentProperties {
         return path;
     }
 
-    public Boolean isBack() {
+    public boolean isBack() {
         return back;
     }
 
@@ -63,6 +69,14 @@ public class DocumentProperties {
         return card;
     }
 
+    public Margin getMargin() {
+        return margin;
+    }
+
+    public Offset getOffset() {
+        return offset;
+    }
+
     public IntStream getPagesRange(int numberOfPages) {
         if (Strings.isNullOrEmpty(pages)) {
             return IntStream.rangeClosed(1, numberOfPages);
@@ -80,5 +94,9 @@ public class DocumentProperties {
                     }
                 })
                 .filter(i -> i > 0 && i <= numberOfPages);
+    }
+
+    public DocumentProperties asBack(boolean back) {
+        return new DocumentProperties(name, path, back, pages, page, grid, card, margin, offset);
     }
 }

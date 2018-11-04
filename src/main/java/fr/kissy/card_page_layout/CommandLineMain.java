@@ -9,23 +9,22 @@ import fr.kissy.card_page_layout.config.DimensionConverterFactory;
 import fr.kissy.card_page_layout.config.DocumentProperties;
 import fr.kissy.card_page_layout.config.GlobalConfig;
 import fr.kissy.card_page_layout.config.GridSize;
+import fr.kissy.card_page_layout.engine.model.Card;
 import fr.kissy.card_page_layout.engine.model.CardToPages;
 import fr.kissy.card_page_layout.engine.model.Page;
 import fr.kissy.card_page_layout.engine.model.WorkingDocument;
-import fr.kissy.card_page_layout.engine.use_case.CreateOutputImage;
 import fr.kissy.card_page_layout.engine.use_case.ImportDocument;
 import fr.kissy.card_page_layout.engine.use_case.WriteDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CommandLineMain {
 
@@ -68,14 +67,22 @@ public class CommandLineMain {
 
             DocumentProperties outputDocumentProperties = mapper.readValue(globalConfig.outputConfigFile, DocumentProperties.class);
 
-            GridSize outputGridSize = outputDocumentProperties.getGrid();
-            List<Page> backCardsOutput = backCardsDocuments.stream()
+            List<Card> allFrontCards = frontCardsDocuments.stream()
                     .flatMap(WorkingDocument::getCards)
-                    .collect(new CardToPages(outputGridSize.getCols() * outputGridSize.getRows()));
+                    .collect(Collectors.toList());
 
-            List<Page> frontCardsOutput = frontCardsDocuments.stream()
+            List<Card> allBackCards = new ArrayList<>();
+            List<Card> backCards = backCardsDocuments.stream()
                     .flatMap(WorkingDocument::getCards)
-                    .collect(new CardToPages(outputGridSize.getCols() * outputGridSize.getRows()));
+                    .collect(Collectors.toList());
+            while (allBackCards.size() < allFrontCards.size()) {
+                allBackCards.addAll(backCards);
+            }
+
+            List<Page> frontCardsOutput = allFrontCards.stream()
+                    .collect(new CardToPages(outputDocumentProperties.asBack(false)));
+            List<Page> backCardsOutput = allBackCards.stream()
+                    .collect(new CardToPages(outputDocumentProperties.asBack(true)));
 
             LOGGER.info("Processing {} fronts and {} backs inputs", frontCardsOutput.size(), backCardsOutput.size());
 

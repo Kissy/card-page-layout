@@ -2,6 +2,8 @@ package fr.kissy.card_page_layout.engine.model;
 
 import com.google.common.collect.Sets;
 import com.sun.jmx.remote.internal.ArrayQueue;
+import fr.kissy.card_page_layout.config.DocumentProperties;
+import fr.kissy.card_page_layout.config.GridSize;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -14,9 +16,11 @@ import java.util.stream.Collectors;
 public class CardToPages implements Collector<Card, Deque<List<Card>>, List<Page>> {
 
     private final int numberPerPages;
+    private DocumentProperties outputDocumentProperties;
 
-    public CardToPages(int numberPerPages) {
-        this.numberPerPages = numberPerPages;
+    public CardToPages(DocumentProperties outputDocumentProperties) {
+        this.outputDocumentProperties = outputDocumentProperties;
+        this.numberPerPages = outputDocumentProperties.getGrid().getCols() * outputDocumentProperties.getGrid().getRows();
     }
 
     @Override
@@ -44,7 +48,7 @@ public class CardToPages implements Collector<Card, Deque<List<Card>>, List<Page
     @Override
     public Function<Deque<List<Card>>, List<Page>> finisher() {
         return (cards) -> cards.stream()
-                .map(Page::new)
+                .map(pageCards -> new Page(outputDocumentProperties, pageCards))
                 .collect(Collectors.toList());
     }
 
