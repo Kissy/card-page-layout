@@ -35,7 +35,7 @@ public class DocumentProperties {
         this.back = back == null ? false : back;
         this.pages = pages;
         this.page = page;
-        this.grid = grid == null ? new GridSize(3, false,3, false) : grid;
+        this.grid = grid == null ? new GridSize(3, 3) : grid;
         this.card = card == null ? new CardSize(750, 1050) : card;
         this.margin = margin == null ? new Margin(0, 0) : margin;
         this.offset = offset == null ? new Offset(0, 0) : offset;

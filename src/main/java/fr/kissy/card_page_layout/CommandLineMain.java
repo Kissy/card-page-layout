@@ -75,8 +75,10 @@ public class CommandLineMain {
             List<Card> backCards = backCardsDocuments.stream()
                     .flatMap(WorkingDocument::getCards)
                     .collect(Collectors.toList());
-            while (allBackCards.size() < allFrontCards.size()) {
-                allBackCards.addAll(backCards);
+            if (!backCards.isEmpty()) {
+                while (allBackCards.size() < allFrontCards.size()) {
+                    allBackCards.addAll(backCards);
+                }
             }
 
             List<Page> frontCardsOutput = allFrontCards.stream()
