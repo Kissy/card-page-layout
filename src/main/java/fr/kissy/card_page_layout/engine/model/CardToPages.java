@@ -47,10 +47,14 @@ public class CardToPages implements Collector<FrontAndBackCard, Deque<List<Front
     @Override
     public Function<Deque<List<FrontAndBackCard>>, List<Page>> finisher() {
         return (cards) -> cards.stream()
-                .flatMap(pageCards -> Stream.of(
-                        new Page(outputDocumentProperties, pageCards.stream().map(FrontAndBackCard::getFrontCard).collect(Collectors.toList()), false),
-                        new Page(outputDocumentProperties, pageCards.stream().map(FrontAndBackCard::getBackCard).collect(Collectors.toList()), true)
-                ))
+                .flatMap(pageCards -> {
+                    Stream.Builder<Page> builder = Stream.builder();
+                    builder.add(new Page(outputDocumentProperties, pageCards.stream().map(FrontAndBackCard::getFrontCard).collect(Collectors.toList()), false));
+                    if (pageCards.stream().map(FrontAndBackCard::getBackCard).allMatch(Objects::nonNull)) {
+                        builder.add(new Page(outputDocumentProperties, pageCards.stream().map(FrontAndBackCard::getBackCard).collect(Collectors.toList()), true));
+                    }
+                    return builder.build();
+                })
                 .collect(Collectors.toList());
     }
 
